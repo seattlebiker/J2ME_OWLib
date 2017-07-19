@@ -103,8 +103,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     private I2CBridgeAdapter    ds2482_bridge;
     
     /** Version string for this adapter class */
-    private static final String CLASS_VERSION = "0.00";
-   
+    private static final String CLASS_VERSION = "0.00";  
     
     private static final byte DS2482SetReadPointer = (byte) 0xE1;         
     //private static final byte OWSkipROMCmd = (byte) 0xCC;
@@ -220,7 +219,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    final int cPPM = 0x00;
    //int cAPU = CONFIG_APU;  
       
-   final byte CONFIG_APU = 0x01;
+   final byte CONFIG_APU = 0x01;    // Set Active-Pullup
        
    public byte DS2482Config = (byte) (c1WS | cSPU | cPPM | CONFIG_APU);
    //--------
@@ -240,6 +239,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         this.CurrentDevice = new byte[8];
         this.device_serial_no = new byte[7];
         setVerbose(true);
+        // Initialize Dallas Semiconductor CRC table
         //byte[] dscrc_table = new byte[256];
     }   
     
@@ -457,6 +457,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
        
    }
    
+    @Override
     public void close() {
         if(!TESTMODE) {
             if (i2c_device.isOpen()) {
@@ -830,6 +831,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
      * Does a RESET on the DS2482 device
      * @return TRUE if it went OK, otherwise FALSE
      */
+    @Override
     public boolean DS2482Detect() {       
         if ( !DS2482Reset() ) {
             msg = "Detect returned false";
@@ -906,6 +908,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
      * @param config Lower nibble only used - the upper 1's complement is generated in this method
      * @return
      */
+    @Override
     public byte DS2482WrtCfg(byte config) {
         int bitmask = 0x00FF;
         byte cfgreg;
@@ -1652,7 +1655,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     * Warning, this does not verify that the device is currently present
     * on the 1-Wire Network (See isPresent).
     *
-    * @param  address    address of iButton or 1-Wire device to select
+    * @param address    address of iButton or 1-Wire device to select
+    * @param channel
     *
     * @return  <code>true</code> if device address was sent, <code>false</code>
     * otherwise.
