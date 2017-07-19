@@ -110,7 +110,7 @@ public class I2C_Device {
     }
 
     /**
-     * I2CSendBlock() writes a sequence of bytes to the selected DS2482<p>
+     * I2CwriteBlock() writes a sequence of bytes to the selected DS2482<p>
      * 
      * @param buffer is an array of bytes to be  written
      * @throws com.unixwizardry.onewire.OneWireException
