@@ -604,12 +604,8 @@ public class OneWireContainer
          // get copy of address
          synchronized (this)
          {
-             try {
-                 System.arraycopy(address, 0, addressCopy, 0, 8);
-                 adapter.I2CwriteBlock(addressCopy);
-             } catch (IOException | Error ex) {
-                 Logger.getLogger(OneWireContainer.class.getName()).log(Level.SEVERE, null, ex);
-             }
+             System.arraycopy(address, 0, addressCopy, 0, 8);
+             adapter.I2CwriteBlock(addressCopy);            
          }
 
          try
