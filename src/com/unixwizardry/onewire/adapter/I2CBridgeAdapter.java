@@ -459,17 +459,13 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    
     @Override
     public void close() {
-        if(!TESTMODE) {
-            if (i2c_device.isOpen()) {
-                try {
-                    i2c_device.close();                    
-                } catch (IOException ex) {
-                    Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-                }
+        if (i2c_device.isOpen()) {
+            try {
+                i2c_device.close();                    
+            } catch (IOException ex) {
+                System.out.println("[I2CBridgeAdapter][close] Error encountered: " + ex.getMessage());              
             }
-        } else {
-            System.out.println("[close] In TESTMODE");
-        }
+        }        
     }
     
     /**
@@ -617,7 +613,6 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
       // If we don't get one, do the normal lookup method.
       if (ibutton_class == null)
       {
-
          // try to load the ibutton container class
          try
          {
@@ -917,15 +912,9 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         byte[] temp = {DS2482_WriteConfigRegCmd, cfg};    
         msg = "Writing config " + byteToHex(cfg);
         printMessage(msg, "DS2482WrtCfg()", INFO);
-        try {
-            try {
-                I2CwriteBlock(temp);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
+        I2CwriteBlock(temp);          
+        
         cfgreg = I2CreadByte();
         msg = "returned: " + PrintBits(1, cfgreg);
         printMessage(msg, "DS2482WrtCfg()", INFO);   
@@ -946,16 +935,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     public boolean OWTouchBit(byte sendbit) {
         byte status_reg = 0;
         int poll_count = 0;
-        byte[] tempp = {DS2482_1WireSingleBitCmd, sendbit};
-        try {
-            try {
-                I2CwriteBlock(tempp);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        byte[] tempp = {DS2482_1WireSingleBitCmd, sendbit};                 
+        I2CwriteBlock(tempp);                  
         do {
             status_reg = I2CreadByte();
         } while (0x01 == (status_reg & STATUS_1WB) && poll_count++ < POLL_LIMIT);
@@ -1164,15 +1145,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         direction = search_direction > 0 ? (byte) 0xFF : 0x0; 
         @SuppressWarnings("LocalVariableHidesMemberVariable")
         byte[] temp = {DS2482_1WireTripletCmd, direction};
-        try {
-            try {
-                I2CwriteBlock(temp);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        I2CwriteBlock(temp);
+            
         do {
             received = I2CreadByte();
         } while (0x01 == STATUS_1WB && poll_count++ < POLL_LIMIT);
@@ -1234,12 +1208,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
 
         byte[] buffer = {DS2482_SEL_CHANNEL, (byte) ch}; 
         msg = "sending = " + toHexString(buffer);
-        printMessage(msg, "DS2482ChannelSelect()", INFO);
-        try {
-            I2CwriteBlock(buffer);           
-        } catch (IOException | OneWireException | Error ex) {
-            return false;
-        }
+        printMessage(msg, "DS2482ChannelSelect()", INFO);      
+        I2CwriteBlock(buffer);                 
         check = I2CreadByte();
         msg = "check = " + byteToHex(check);
         printMessage(msg, "DS2482ChannelSelect()", INFO);
@@ -1261,15 +1231,9 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         byte received;
         int poll_count = 0;
         byte[] tempp = {DS2482_1WireWriteByteCmd};
-        try {
-            try {
-                I2CwriteBlock(tempp);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
+        I2CwriteBlock(tempp);
+            
         do {
             received = I2CreadByte();
         } while (0x01 == (received & STATUS_1WB) && poll_count++ < POLL_LIMIT);
@@ -1291,16 +1255,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         byte byteToSend = (byte) (sendbyte & 0xFF);
         byte received_status;
         int poll_count = 0;
-        byte[] tempp = {DS2482_1WireWriteByteCmd, byteToSend};
-        try {
-            try {
-                I2CwriteBlock(tempp);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        byte[] tempp = {DS2482_1WireWriteByteCmd, byteToSend};                   
+        I2CwriteBlock(tempp);                   
         do {
             received_status = I2CreadByte();
         } while (0x01 == (received_status & STATUS_1WB) && poll_count++ < POLL_LIMIT);
@@ -1438,16 +1394,9 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
             DS2482Reset();
             System.out.println("[OWReadByte] Poll count exceeded; DS2482 was reset: result was " + PrintBits(0, received));
         }    
-        byte [] toSend = {DS2482SetReadPointer, DS2482ReadDataRegister };
-        try {
-            try {
-                I2CwriteBlock(toSend);
-            } catch (IOException | Error ex) {
-                Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (OneWireException ex) {
-            Logger.getLogger(I2CBridgeAdapter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        byte [] toSend = {DS2482SetReadPointer, DS2482ReadDataRegister };       
+        I2CwriteBlock(toSend);
+            
         do {
             received = I2CreadByte();
         } while (0x01 == (received & STATUS_1WB) && poll_count++ < POLL_LIMIT);
