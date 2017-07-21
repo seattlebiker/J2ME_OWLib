@@ -1,4 +1,13 @@
+/***********************************************************************
+ * Adding copyright stuff and giving credit to Oracle for the original 
+ * code for the great Java ME MOOC (Massive Online Oracle Class) that
+ * gave me the impetus to get the Dallas Semiconductor 1-wire code to
+ * work with Java Micro Edition.
+ */
 
+
+/* The below is for the Oracle code contained in the MOOC classes     */
+/* Copyright 2014, Oracle and/or its affiliates. All rights reserved. */
 
 package com.unixwizardry.accessProvider;
 
@@ -11,9 +20,7 @@ package com.unixwizardry.accessProvider;
  * @author     DS
  */
 
-import com.unixwizardry.onewire.OneWireException;
 import com.unixwizardry.onewire.utils.Convert;
-import static com.unixwizardry.onewire.utils.Convert.bytesToHexLE;
 import static com.unixwizardry.onewire.utils.Convert.toHexString;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,17 +31,15 @@ import jdk.dio.i2cbus.I2CDevice;
 import jdk.dio.i2cbus.I2CDeviceConfig;
 
 public class I2C_Device {    
-    protected boolean       TESTMODE = false;
     protected I2CDevice     i2c_device = null;       // I2C device
-    private final byte      i2cBus;                       
-    //private int serialClock = 100000;              // default clock 100KHz 
-    private int         serialClock = -1;            // I have no idea why J2ME now needs the I2C clock set to -1
-    private int         addressSizeBits = 7;         // default address size
-    private final byte  address;                     // Common DS2482 I2C device address
-    private final int   registerSize = 1;            //Register size in bytes
-    private final int   bufferSize = 1;              // Register size in bytes
-    public boolean      adapterPresent;
-    boolean             statusOK = false;
+    private byte            i2cBus = 1;              // Default I2C bus        
+    private final int       serialClock = -1;        // I have no idea why J2ME 8.2 now needs the I2C clock set to -1
+    private int             addressSizeBits = 7;     // Default address size
+    private byte            address = 18;            // Default DS2482 I2C device address
+    private final int       registerSize = 1;        //Register size in bytes
+    private final int       bufferSize = 1;          // Register size in bytes
+    public boolean          adapterPresent;
+    boolean                 statusOK = false;
     
     final ByteBuffer command;
     final ByteBuffer byteToRead;
@@ -46,7 +51,9 @@ public class I2C_Device {
     
     public static boolean verbose = false;
     private int messageLevel = ERROR;
-         
+      
+    //private static final Logger LOGGER = Logger.getLogger(I2C_Device.class.getName());
+    
     /**
      * Constructor for the I2C Dallas device. This method update the device address and
      * try to connect to the device
@@ -59,7 +66,8 @@ public class I2C_Device {
         this.command    = ByteBuffer.wrap(new byte[bufferSize]);   
         this.address = address;
         this.i2cBus = i2cBus;    
-        statusOK = connectToDevice();      
+        statusOK = connectToDevice();  
+        //Logger.getLogger(I2C_Device.class.getName()).log(Level.SEVERE, null, ex);
     }
 
     /**
@@ -68,14 +76,12 @@ public class I2C_Device {
      * @param i2cBus Device bus. For Raspberry Pi usually it's 1
      * @param address Device address
      * @param addressSizeBits I2C normally uses 7 bits addresses
-     * @param serialClock Clock speed
      */
-    public I2C_Device(byte i2cBus, byte address, int addressSizeBits, int serialClock) {
+    public I2C_Device(byte i2cBus, byte address, int addressSizeBits) {
         this.byteToRead = ByteBuffer.wrap(new byte[bufferSize]);
         this.command = ByteBuffer.wrap(new byte[bufferSize]);
         this.address = address;
         this.addressSizeBits = addressSizeBits;
-        this.serialClock = serialClock;
         this.i2cBus = i2cBus;
         statusOK = connectToDevice();       
     }
@@ -88,79 +94,63 @@ public class I2C_Device {
      * command = ByteBuffer.allocateDirect(bufferSize);
      * byteToRead = ByteBuffer.allocateDirect(1);
      * 
+     * @return Boolean: true if connected OK, otherwise false
      */
     public final boolean connectToDevice() {   
         boolean connectStatus = false;
-        if (!TESTMODE) {
-            try {                
-                //System.out.println("[connectToDevice] Opening I2C device at: " + toHexString(address) + " on bus " + i2cBus);               
-                I2CDeviceConfig config = new I2CDeviceConfig(i2cBus, address, addressSizeBits, serialClock);
-                i2c_device = DeviceManager.open(config);               
-                adapterPresent = true;
-                connectStatus = true;
-                printMessage("Connected to the I2C 1-wire device OK", "connectToDevice()", INFO);                   
-            } catch (IOException e) {
-                System.out.println("[I2C_Device][connectToDevice] Error connecting to device at address " + toHexString(address));
-            }                
-        } else {
-            System.out.println("[I2C_Device][connectToDevice] In TESTMODE");
-            System.out.println("[I2C_Device][connectToDevice] Opening I2C device at: " + toHexString(address));
-        }
+        try {                
+            //System.out.println("[connectToDevice] Opening I2C device at: " + toHexString(address) + " on bus " + i2cBus);               
+            I2CDeviceConfig config = new I2CDeviceConfig(i2cBus, address, addressSizeBits, serialClock);
+            i2c_device = DeviceManager.open(config);               
+            adapterPresent = true;
+            connectStatus = true;
+            printMessage("Connected to the I2C 1-wire device OK", "connectToDevice()", INFO);                   
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][connectToDevice] Error connecting to device at address " + toHexString(address));
+        }                        
         return connectStatus;
     }
 
     /**
      * I2CwriteBlock() writes a sequence of bytes to the selected DS2482<p>
      * 
-     * @param buffer is an array of bytes to be  written
-     * @throws com.unixwizardry.onewire.OneWireException
-     * @throws java.io.IOException
+     * @param buffer is an array of bytes to be written   
      */
-    public void I2CwriteBlock(byte[] buffer) throws OneWireException, IOException, Error {
-        //for ( byte b:buffer) {
-        //    System.out.println("Writing: " + byteToHex(b));
-        //}
-        //System.out.println("[sendBlock] buffer is: " + bytesToHex(buffer));
-        if (!TESTMODE) { 
-            msg = "Sending " + Convert.toHexString(buffer);
-            printMessage(msg, "I2CsendBlock()", INFO);
-            i2c_device.write(ByteBuffer.wrap(buffer));           
-        } else {
-            System.out.println("[I2C_Device][I2CsendBlock] Sending " + bytesToHexLE(buffer) + " in TESTMODE ");
-        }
+    public void I2CwriteBlock(byte[] buffer) {       
+
+        msg = "Sending " + Convert.toHexString(buffer);
+        printMessage(msg, "I2CsendBlock()", INFO);
+        try {           
+            i2c_device.write(ByteBuffer.wrap(buffer));
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][I2CwriteBlock] Error encountered: " + ex.getMessage());            
+        }      
     }
     
     /**
      * I2CSendByte() tries to write one single byte to the device
      *
      * @param byteToWrite is the single byte to be written
-     * @throws java.io.IOException
      */
     
     public void I2CwriteByte(byte byteToWrite) {
-        if (!TESTMODE) {
-            try {
-                command.clear();
-                command.put(byteToWrite);
-                command.rewind();   
-                msg = "Sending " + Convert.byteToHex(byteToWrite);
-                printMessage(msg, "I2CsendByte()", INFO);                
-                i2c_device.write(command); 
-            } catch (IOException e) {
-                System.out.println("[I2C_Device][I2CsendByte] configure exception: " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("[I2C_Device][I2CsendByte] Peripheral not available exception: " + e.getMessage());
-            }
-        }else {
-            System.out.println("[I2C_Device][I2CsendByte] In TESTMODE");
-        }
+        try {
+            command.clear();
+            command.put(byteToWrite);
+            command.rewind();   
+            msg = "Sending " + Convert.byteToHex(byteToWrite);
+            printMessage(msg, "I2CsendByte()", INFO);                
+            i2c_device.write(command); 
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][I2CwriteByte] Error encountered: " + ex.getMessage());
+        }        
     }  
     
     /**
      * This method tries to write one single byte to particular registry
      *
-     * @param registry Registry to write
-     * @param byteToWrite Byte to be written
+     * @param register Register to write
+     * @param byteToWrite Byte to be written    
      */
     public void I2CwriteByte(int register, byte byteToWrite) {
         command.clear();
@@ -170,29 +160,20 @@ public class I2C_Device {
                 printMessage(msg, "I2CsendByte()", INFO);         
         try {
             i2c_device.write(register, registerSize, command);
-        } catch (IOException e) {
-            System.out.println("[I2C_Device][I2CsendByte]: writeOneByte: Error writing registry " + register);
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][I2CwriteByte]: I2CwriteByte: Error writing register " + 
+                    register + " " + ex.getMessage());
         }
 
     }
     
     
-    public void I2CwriteBytes(byte[] buffer) {
-        //for ( byte b:buffer) {
-        //    System.out.println("Writing: " + byteToHex(b));
-        //}
-        //System.out.println("[sendBlock] buffer is: " + bytesToHex(buffer));
-        if (!TESTMODE) {
-            try {           
-                i2c_device.write(ByteBuffer.wrap(buffer));
-            } catch (IOException e) {
-                System.out.println("[I2C_Device][I2CsendBytes] configure exception: " + e.getMessage());
-            } catch (Exception e) {
-                System.out.println("[I2C_Device][I2CsendBytes] Peripheral not available exception: " + e.getMessage());
-            }
-        } else {
-            System.out.println("[I2C_Device][I2CsendBytes] Sending " + bytesToHexLE(buffer) + " in TESTMODE ");
-        }
+    public void I2CwriteBytes(byte[] buffer) {       
+        try {           
+            i2c_device.write(ByteBuffer.wrap(buffer));
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][I2CwriteBytes] Error encountered: " + ex.getMessage());
+        }        
     }
     
     
@@ -207,22 +188,19 @@ public class I2C_Device {
     public byte I2CreadByte() {
         byteToRead.clear();
         int result; 
-        if (!TESTMODE) {
-            try {
-                result = i2c_device.read(byteToRead);
-                if (result < 1) {
-                    System.out.println("[I2C_Device][I2CreadByte] Byte could not be read");
-                } else {
-                    byteToRead.rewind();
-                    return byteToRead.get();
-                }
-                return (byte) result;
-            } catch (IOException ex) {
-                Logger.getLogger(I2C_Device.class.getName()).log(Level.SEVERE, null, ex);
+        try {
+            result = i2c_device.read(byteToRead);
+            if (result < 1) {
+                System.out.println("[I2C_Device][I2CreadByte] source could not be read");
+            } else {
+                byteToRead.rewind();
+                return byteToRead.get();
             }
-        }else {
-            System.out.println("[I2C_Device][I2CreadByte] In TESTMODE");
-        }
+            //return (byte) result;
+            
+            } catch (IOException ex) {
+                System.out.println("[I2C_Device][I2CwriteBytes] Error encountered: " + ex.getMessage());               
+            }       
         return 2;
     }
 
@@ -238,21 +216,17 @@ public class I2C_Device {
     public byte I2CreadByte(byte register) {
         byteToRead.clear();
         int result; 
-        if (!TESTMODE) {
-            try {
-                result = i2c_device.read(register, 1, byteToRead);
-                if (result < 1) {
-                    System.out.println("[I2C_Device][I2CreadByte] Byte could not be read");
-                } else {
-                    byteToRead.rewind();
-                    return byteToRead.get();
-                }
-                return (byte) result;
-            } catch (IOException ex) {
-                Logger.getLogger(I2C_Device.class.getName()).log(Level.SEVERE, null, ex);
+        try {
+            result = i2c_device.read(register, 1, byteToRead);
+            if (result < 1) {
+                System.out.println("[I2C_Device][I2CreadByte] Byte could not be read");
+            } else {
+                byteToRead.rewind();
+                return byteToRead.get();
             }
-        }else {
-            System.out.println("[I2C_Device][I2CreadByte] In TESTMODE");
+            return (byte) result;
+        } catch (IOException ex) {
+            System.out.println("[I2C_Device][I2CreadByte] Error encountered: " + ex.getMessage());
         }
         return 2;
     }
