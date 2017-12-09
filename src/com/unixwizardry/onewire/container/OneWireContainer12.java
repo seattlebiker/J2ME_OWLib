@@ -34,6 +34,7 @@ package com.unixwizardry.onewire.container;
 import com.unixwizardry.onewire.utils.CRC16;
 import com.unixwizardry.onewire.adapter.*;
 import com.unixwizardry.onewire.OneWireException;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Enumeration;
 
@@ -440,9 +441,10 @@ public class OneWireContainer12 extends OneWireContainer implements SwitchContai
     * and {@link com.unixwizardry.onewire.container.OTPMemoryBank OTPMemoryBank}.
     * @return <CODE>Enumeration</CODE> of memory banks
     */
-   public Enumeration getMemoryBanks ()
+   @Override
+   public ArrayList getMemoryBanks ()
    {
-      Vector bank_vector = new Vector(2);
+      ArrayList bank_list = new ArrayList();
 
       // EPROM main bank
       MemoryBankEPROM mn = new MemoryBankEPROM(this);
@@ -450,7 +452,7 @@ public class OneWireContainer12 extends OneWireContainer implements SwitchContai
       mn.numberPages = 4;
       mn.size        = 128;
 
-      bank_vector.addElement(mn);
+      bank_list.add(mn);
 
       // EPROM status write protect pages bank
       MemoryBankEPROM st = new MemoryBankEPROM(this);
@@ -468,7 +470,7 @@ public class OneWireContainer12 extends OneWireContainer implements SwitchContai
       st.READ_PAGE_WITH_CRC   = MemoryBankEPROM.STATUS_READ_PAGE_COMMAND;
       st.WRITE_MEMORY_COMMAND = MemoryBankEPROM.STATUS_WRITE_COMMAND;
 
-      bank_vector.addElement(st);
+      bank_list.add(st);
 
       // setup OTP features in main memory
       mn.mbLock         = st;
@@ -477,7 +479,7 @@ public class OneWireContainer12 extends OneWireContainer implements SwitchContai
       mn.redirectOffset = 1;
       mn.redirectPage   = true;
 
-      return bank_vector.elements();
+      return bank_list;
    }
 
    //--------

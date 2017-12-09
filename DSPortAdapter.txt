@@ -1,6 +1,5 @@
 
 
-
 /*---------------------------------------------------------------------------
  * Copyright (C) 1999,2000 Dallas Semiconductor Corporation, All Rights Reserved.
  *
@@ -30,11 +29,12 @@
 
 package com.unixwizardry.onewire.adapter;
 
-
 // imports
 import java.util.Enumeration;
+import com.unixwizardry.onewire.container.OneWireContainer;
 import com.unixwizardry.onewire.utils.*;
 import com.unixwizardry.onewire.OneWireException;
+import java.util.Vector;
 import java.util.Hashtable;
 
 
@@ -603,8 +603,8 @@ public abstract class DSPortAdapter
     * @throws OneWireIOException on a 1-Wire communication error
     * @throws OneWireException on a setup error with the 1-Wire adapter
     */
-   /*
-   public Enumeration getAllDeviceContainers () throws OneWireIOException, OneWireException
+   public Enumeration getAllDeviceContainers ()
+      throws OneWireIOException, OneWireException
    {
       Vector           ibutton_vector = new Vector();
       OneWireContainer temp_ibutton;
@@ -615,7 +615,7 @@ public abstract class DSPortAdapter
       {
          ibutton_vector.addElement(temp_ibutton);
 
-         //loop to get all of the ibuttons
+         // loop to get all of the ibuttons
          do
          {
             temp_ibutton = getNextDeviceContainer();
@@ -628,8 +628,30 @@ public abstract class DSPortAdapter
 
       return ibutton_vector.elements();
    }
-   */
-   
+
+   /**
+    * Returns a <code>OneWireContainer</code> object corresponding to the first iButton
+    * or 1-Wire device found on the 1-Wire Network. If no devices are found,
+    * then a <code>null</code> reference will be returned. In most cases, all further
+    * communication with the device is done through the <code>OneWireContainer</code>.
+    *
+    * @return  The first <code>OneWireContainer</code> object found on the
+    * 1-Wire Network, or <code>null</code> if no devices found.
+    *
+    * @throws OneWireIOException on a 1-Wire communication error
+    * @throws OneWireException on a setup error with the 1-Wire adapter
+    */
+   public OneWireContainer getFirstDeviceContainer ()
+      throws OneWireIOException, OneWireException
+   {
+      if (findFirstDevice() == true)
+      {
+         return getDeviceContainer();
+      }
+      else
+         return null;
+   }
+
    /**
     * Returns a <code>OneWireContainer</code> object corresponding to the next iButton
     * or 1-Wire device found. The previous 1-Wire device found is used
@@ -643,7 +665,6 @@ public abstract class DSPortAdapter
     * @throws OneWireIOException on a 1-Wire communication error
     * @throws OneWireException on a setup error with the 1-Wire adapter
     */
-   /*
    public OneWireContainer getNextDeviceContainer ()
       throws OneWireIOException, OneWireException
    {
@@ -654,7 +675,6 @@ public abstract class DSPortAdapter
       else
          return null;
    }
-   */
 
    /**
     * Returns <code>true</code> if the first iButton or 1-Wire device
@@ -1553,12 +1573,137 @@ public abstract class DSPortAdapter
    //-------- Misc
    //--------
 
-   
-   
+   /**
+    * Constructs a <code>OneWireContainer</code> object with a user supplied 1-Wire network address.
+    *
+    * @param  address  device address with which to create a new container
+    *
+    * @return  The <code>OneWireContainer</code> object
+    * @see   com.unixwizardry.onewire.utils.Address
+    */
+   public OneWireContainer getDeviceContainer (byte[] address)
+   {
+      int              family_code   = address [0] & 0x7F;
+      String           family_string =
+         ((family_code) < 16)
+         ? ("0" + Integer.toHexString(family_code)).toUpperCase()
+         : (Integer.toHexString(family_code)).toUpperCase();
+      Class            ibutton_class = null;
+      OneWireContainer new_ibutton;
 
-   
+      // If any user registered button exist, check the hashtable.
+      if (!registeredOneWireContainerClasses.isEmpty())
+      {
+         Integer familyInt = new Integer(family_code);
 
-   
+         // Try and get a user provided container class first.
+         ibutton_class =
+            ( Class ) registeredOneWireContainerClasses.get(familyInt);
+      }
+
+      // If we don't get one, do the normal lookup method.
+      if (ibutton_class == null)
+      {
+
+         // try to load the ibutton container class
+         try
+         {
+            ibutton_class =
+               Class.forName("com.unixwizardry.onewire.container.OneWireContainer"
+                             + family_string);
+         }
+         catch (Exception e)
+         {
+            ibutton_class = null;
+         }
+
+         // if did not get specific container try the general one
+         if (ibutton_class == null)
+         {
+
+            // try to load the ibutton container class
+            try
+            {
+               ibutton_class = Class.forName(
+                  "com.unixwizardry.onewire.container.OneWireContainer");
+            }
+            catch (Exception e)
+            {
+               System.out.println("EXCEPTION: Unable to load OneWireContainer"
+                                  + e);
+               return null;
+            }
+         }
+      }
+
+      // try to load the ibutton container class
+      try
+      {
+
+         // create the iButton container with a reference to this adapter
+         new_ibutton = ( OneWireContainer ) ibutton_class.newInstance();
+
+         //pi4nico
+         new_ibutton.setupContainer(this, address);
+      }
+      catch (Exception e)
+      {
+         System.out.println(
+            "EXCEPTION: Unable to instantiate OneWireContainer "
+            + ibutton_class + ": " + e);
+         e.printStackTrace();
+
+         return null;
+      }
+
+      // return this new container
+      return new_ibutton;
+   }
+
+   /**
+    * Constructs a <code>OneWireContainer</code> object with a user supplied 1-Wire network address.
+    *
+    * @param  address  device address with which to create a new container
+    *
+    * @return  The <code>OneWireContainer</code> object
+    * @see   com.unixwizardry.onewire.utils.Address
+    */
+   public OneWireContainer getDeviceContainer (long address)
+   {
+      return getDeviceContainer(Address.toByteArray(address));
+   }
+
+   /**
+    * Constructs a <code>OneWireContainer</code> object with a user supplied 1-Wire network address.
+    *
+    * @param  address  device address with which to create a new container
+    *
+    * @return  The <code>OneWireContainer</code> object
+    * @see   com.unixwizardry.onewire.utils.Address
+    */
+   public OneWireContainer getDeviceContainer (String address)
+   {
+      return getDeviceContainer(Address.toByteArray(address));
+   }
+
+   /**
+    * Constructs a <code>OneWireContainer</code> object using the current 1-Wire network address.
+    * The internal state of the port adapter keeps track of the last
+    * address found and is able to create container objects from this
+    * state.
+    *
+    * @return  the <code>OneWireContainer</code> object
+    */
+   public OneWireContainer getDeviceContainer ()
+   {
+
+      // Mask off the upper bit.
+      byte[] address = new byte [8];
+
+      getAddress(address);
+
+      return getDeviceContainer(address);
+   }
 
    /**
     * Checks to see if the family found is in the desired
@@ -1734,3 +1879,4 @@ public abstract class DSPortAdapter
       }
    }
 }
+

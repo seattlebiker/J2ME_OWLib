@@ -7,7 +7,8 @@ package com.unixwizardry.onewire.container;
 
 import com.unixwizardry.onewire.OneWireException;
 import com.unixwizardry.onewire.adapter.OneWireIOException;
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.ListIterator;
 
 /**
  *
@@ -38,22 +39,22 @@ public interface CounterContainer {
     * SPEED_REGULAR(0).
     *
     * @return maximum speed
-    * @see com.dalsemi.onewire.container.OneWireContainer#setSpeed super.setSpeed
-    * @see com.dalsemi.onewire.adapter.I2CBridgeAdapter#SPEED_REGULAR I2CBridgeAdapter.SPEED_REGULAR
-    * @see com.dalsemi.onewire.adapter.I2CBridgeAdapter#SPEED_OVERDRIVE I2CBridgeAdapter.SPEED_OVERDRIVE
-    * @see com.dalsemi.onewire.adapter.I2CBridgeAdapter#SPEED_FLEX I2CBridgeAdapter.SPEED_FLEX
+    * @see com.unixwizardry.onewire.container.OneWireContainer#setSpeed super.setSpeed
+    * @see com.unixwizardry.onewire.adapter.I2CBridgeAdapter#SPEED_REGULAR I2CBridgeAdapter.SPEED_REGULAR
+    * @see com.unixwizardry.onewire.adapter.I2CBridgeAdapter#SPEED_OVERDRIVE I2CBridgeAdapter.SPEED_OVERDRIVE
+    * @see com.unixwizardry.onewire.adapter.I2CBridgeAdapter#SPEED_FLEX I2CBridgeAdapter.SPEED_FLEX
     */
    public int getMaxSpeed ();
    
    /**
-    * Get an enumeration of memory bank instances that implement one or more
+    * Get a ListIterator of memory bank instances that implement one or more
     * of the following interfaces:
-    * {@link com.dalsemi.onewire.container.MemoryBank MemoryBank}, 
-    * {@link com.dalsemi.onewire.container.PagedMemoryBank PagedMemoryBank}, 
-    * and {@link com.dalsemi.onewire.container.OTPMemoryBank OTPMemoryBank}. 
+    * {@link com.unixwizardry.onewire.container.MemoryBank MemoryBank}, 
+    * {@link com.unixwizardry.onewire.container.PagedMemoryBank PagedMemoryBank}, 
+    * and {@link com.unixwizardry.onewire.container.OTPMemoryBank OTPMemoryBank}. 
     * @return <CODE>Enumeration</CODE> of memory banks 
     */
-   public Enumeration getMemoryBanks ();
+   public ArrayList getMemoryBanks ();
    
    /**
     * Read the counter value associated with a page on this 

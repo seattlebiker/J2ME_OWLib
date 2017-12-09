@@ -33,10 +33,7 @@ package com.unixwizardry.onewire.container;
 import com.unixwizardry.onewire.utils.Address;
 import com.unixwizardry.onewire.adapter.*;
 import com.unixwizardry.onewire.OneWireException;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 
 
 /**
@@ -69,11 +66,11 @@ import java.util.logging.Logger;
  *  PagedMemoryBank pg_mb;
  *  OTPMemoryBank   otp_mb;
  *
- *  for(Enumeration bank_enum = owd.getMemoryBanks();
- *                      bank_enum.hasMoreElements(); )
+ *  for(Enumeration bank_list = owd.getMemoryBanks();
+ *                      bank_list.hasMoreElements(); )
  *  {
  *     // get the next memory bank, cast to MemoryBank
- *     mb = (MemoryBank)bank_enum.nextElement();
+ *     mb = (MemoryBank)bank_list.nextElement();
  *
  *     // check if has paged services
  *     if (mb instanceof PagedMemoryBank)
@@ -387,10 +384,10 @@ public class OneWireContainer
     *   on this iButton or 1-Wire device
     * @see MemoryBank
     */
-   public Enumeration getMemoryBanks ()
+   public ArrayList getMemoryBanks ()
    {
       //return new Vector(0).elements();           
-       return null;      
+      return null;      
    }
    
    
@@ -638,6 +635,37 @@ public class OneWireContainer
             "Speed selected (hyperdrive) is not supported by this method");
    }
    
+   /**
+    * Create a menu of memory banks from the provided OneWireContainer
+    * allow the user to select one.
+    *
+    * @param  owd devices to choose a MemoryBank from
+    * @param select
+    *
+    * @return MemoryBank memory bank selected
+    */
+   public static MemoryBank selectBank (OneWireContainer owd, int select) 
+   {     
+      MemoryBank mb;
+      ArrayList bank_list;
+      
+      // get an ArrayList of the banks
+      
+      bank_list = owd.getMemoryBanks();
+      
+      for (  Object bank : bank_list ) {
+         bank_list.add(( MemoryBank ) bank);
+      }
+
+      String mem_description = "Memory Bank Selection for " + owd.getAddressAsString()
+                 + " - " + owd.getName();
+
+      if (owd.getAlternateNames().length() > 0)
+          mem_description += "/" + owd.getAlternateNames();
+     
+      return ( MemoryBank ) bank_list.get(select);
+   }
+
    
    //--------
    //-------- Object Methods

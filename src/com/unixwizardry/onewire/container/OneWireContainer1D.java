@@ -38,8 +38,7 @@ import com.unixwizardry.onewire.utils.Convert;
 import static com.unixwizardry.onewire.utils.Convert.byteToHex;
 import static com.unixwizardry.onewire.utils.Convert.bytesToHexLE;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
+import java.util.ListIterator;
 
 
 /**
@@ -155,8 +154,9 @@ import java.util.Enumeration;
  * @see com.unixwizardry.onewire.container.MemoryBank
  * @see com.unixwizardry.onewire.container.PagedMemoryBank
  * 
- * @version    0.00, 28 Aug 2000
- * @author     DS
+ * @version     0.00, 28 Aug 2000
+ * @author      DS
+ * @author      Bruce Juntti (some updating)
  */
 public class OneWireContainer1D extends OneWireContainer implements CounterContainer
 {
@@ -336,7 +336,7 @@ public class OneWireContainer1D extends OneWireContainer implements CounterConta
    }
 
    /**
-    * Get an enumeration of memory bank instances that implement one or more
+    * Get a ListIterator object of memory bank instances that implement one or more
     * of the following interfaces:
     * {@link com.unixwizardry.onewire.container.MemoryBank MemoryBank}, 
     * {@link com.unixwizardry.onewire.container.PagedMemoryBank PagedMemoryBank}, 
@@ -344,8 +344,8 @@ public class OneWireContainer1D extends OneWireContainer implements CounterConta
     * @return <CODE>Enumeration</CODE> of memory banks 
     */
    @Override
-   public Enumeration getMemoryBanks (){
-      ArrayList bank_list = new ArrayList();
+   public ArrayList getMemoryBanks (){
+      ArrayList<MemoryBank> bank_list = new ArrayList<MemoryBank>();
 
       // scratchpad
       MemoryBankScratchEx scratch = new MemoryBankScratchEx(this);
@@ -387,9 +387,8 @@ public class OneWireContainer1D extends OneWireContainer implements CounterConta
       nv.extraInfoDescription = "Externally triggered counter";
       nv.extraInfoLength      = 8;
 
-      bank_list.add(nv);
-      Enumeration e = Collections.enumeration(bank_list);    
-      return e;
+      bank_list.add(nv);   
+      return bank_list;
    }
 
    //--------
@@ -502,9 +501,9 @@ public class OneWireContainer1D extends OneWireContainer implements CounterConta
                 readBuf[i] = adapter.OWReadByte();
             }
             
-            for(i = 0; i < 3; i++) {
-                System.out.println("readBuf[" + i + "] = " + byteToHex(readBuf[i]));
-            }
+            //for(i = 0; i < 3; i++) {
+            //    System.out.println("readBuf[" + i + "] = " + byteToHex(readBuf[i]));
+            //}
             
             // Reset and select device again for copy scratchpad to memory
             adapter.OWSelect(address);
@@ -522,7 +521,7 @@ public class OneWireContainer1D extends OneWireContainer implements CounterConta
             }
             
             // print everything
-            System.out.println(Convert.toHexString(readBuf));
+            //System.out.println(Convert.toHexString(readBuf));
         } else      
            throw new OneWireIOException("OneWireContainer1D-device not present");
        

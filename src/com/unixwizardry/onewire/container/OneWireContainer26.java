@@ -226,12 +226,12 @@ public class OneWireContainer26 extends OneWireContainer
     */
       
     
-   public Enumeration getMemoryBanks ()
+   public ArrayList getMemoryBanks ()
    {
-      ArrayList bank_vector = new ArrayList(8);
+      ArrayList bank_list = new ArrayList(8);
 
       // Status
-      bank_vector.add(new MemoryBankSBM(this));
+      bank_list.add(new MemoryBankSBM(this));
 
       // Temp/Volt/Current
       
@@ -244,7 +244,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = true;
       temp.nonVolatile          = false;
       temp.powerDelivery        = false;
-      bank_vector.add(temp);
+      bank_list.add(temp);
       
       // Threshold
       
@@ -257,7 +257,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = true;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);
+      bank_list.add(temp);
       
       // Elapsed Timer Meter      
       temp = new MemoryBankSBM(this);
@@ -269,7 +269,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = false;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);      
+      bank_list.add(temp);      
 
       // Current Offset      
       temp = new MemoryBankSBM(this);
@@ -281,7 +281,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = true;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);
+      bank_list.add(temp);
       
       // Disconnect / End of Charge     
       temp = new MemoryBankSBM(this);
@@ -293,7 +293,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = false;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);      
+      bank_list.add(temp);      
 
       // User Main Memory     
       temp = new MemoryBankSBM(this);
@@ -305,7 +305,7 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = true;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);     
+      bank_list.add(temp);     
 
       // User Memory / CCA / DCA      
       temp = new MemoryBankSBM(this);
@@ -317,8 +317,8 @@ public class OneWireContainer26 extends OneWireContainer
       temp.readOnly             = false;
       temp.nonVolatile          = true;
       temp.powerDelivery        = true;
-      bank_vector.add(temp);    
-      return Collections.enumeration(null);
+      bank_list.add(temp);    
+      return bank_list;
    }
 
    /**
@@ -489,7 +489,7 @@ public class OneWireContainer26 extends OneWireContainer
    public void writePage (int page, byte[] source, int offset)
       throws OneWireIOException, OneWireException
    {
-      debugMsg = "page " + page + ", source[] = " + toHexString(source) + "offset = " + offset;
+      debugMsg = "page " + page + ", source[] = " + toHexString(source) + " -- offset = " + offset;
       printMessage(debugMsg, "[OneWireContainer26][writePage]", OneWireContainer.INFO);
       byte[] buffer = new byte [10];
 
@@ -986,7 +986,8 @@ public class OneWireContainer26 extends OneWireContainer
          result [0] = 0.2441;
       else
          result [0] = 0.01;   //10 mV
-
+      
+      System.out.println("[OneWireContainer26][getADResolutions] Returning " + result[0]  );
       return result;
    }
 
@@ -1048,14 +1049,14 @@ public class OneWireContainer26 extends OneWireContainer
 
          // first perform the conversion      
          if (adapter.OWSelect(address)) {
-            adapter.I2CwriteByte(CONVERT_VOLTAGE_COMMAND);
+            adapter.OWWriteByte(CONVERT_VOLTAGE_COMMAND);
 
             try
             {
                Thread.sleep(4);
             }
             catch (InterruptedException e){}
-
+            
             byte[] data = readPage(0);
             debugMsg = "data = " + toHexString(data);
             printMessage(debugMsg,  "[OneWireContainer26][doADConvert]", INFO);
@@ -1381,7 +1382,7 @@ public class OneWireContainer26 extends OneWireContainer
    public byte[] readDevice () throws OneWireIOException, OneWireException
    {
       //should return the first three pages
-      //and then 6 extra bytes, 2 for channel 1 voltage and
+      //and then 4 extra bytes, 2 for channel 1 voltage and
       //2 for channel 2 voltage
       byte[] state = new byte [28];
 
@@ -1389,7 +1390,7 @@ public class OneWireContainer26 extends OneWireContainer
             byte[] pg = readPage(i);         
             debugMsg = "page" + i + ": " + toHexString(pg);
             printMessage(debugMsg, "[OneWireContainer26][readDevice]", OneWireContainer.INFO);
-         System.arraycopy(pg, 0, state, i * 8, 8);
+            System.arraycopy(pg, 0, state, i * 8, 8);
       }
 
       //the last four bytes are used this way...
@@ -1420,7 +1421,7 @@ public class OneWireContainer26 extends OneWireContainer
     */
    @Override
    public void writeDevice (byte[] state) throws OneWireIOException, OneWireException
-   {
+   {     
       writePage(0, state, 0);
       writePage(1, state, 8);
    }

@@ -1,5 +1,6 @@
 /*
  * Portions of this code are from Oracle so I include this disclaimer
+ * @author Bruce Juntti
  */
 /*---------------------------------------------------------------------------
  * Copyright (C) 1999,2000 Dallas Semiconductor Corporation, All Rights Reserved.
@@ -32,22 +33,22 @@ package com.unixwizardry.onewire.adapter;
 
 import static com.unixwizardry.onewire.adapter.DS2482.OWMatchROMCmd;
 import static com.unixwizardry.onewire.adapter.DS2482.OWSearchCmd;
+import static com.unixwizardry.onewire.adapter.DS2482.OWAlarmSearchCmd;
 import com.unixwizardry.accessProvider.I2C_Device;
 import com.unixwizardry.onewire.OneWireException;
 import com.unixwizardry.onewire.container.OneWireContainer;
 import com.unixwizardry.onewire.utils.Address;
-import com.unixwizardry.onewire.utils.Convert;
 import static com.unixwizardry.onewire.utils.Convert.byteToHex;
 import static com.unixwizardry.onewire.utils.Convert.bytesToHexLE;
 import static com.unixwizardry.onewire.utils.Convert.toHexString;
 import static com.unixwizardry.onewire.utils.PrintBits.*;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.Thread.sleep;
+import java.util.Iterator;
 
 
 public class I2CBridgeAdapter extends I2C_Device implements DS2482 {    
@@ -103,7 +104,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     private I2CBridgeAdapter    ds2482_bridge;
     
     /** Version string for this adapter class */
-    private static final String CLASS_VERSION = "0.00";  
+    private static final String CLASS_VERSION   = "0.5";  
+    private static final String ADAPTER_VERSION = "<n/a>";
     
     private static final byte DS2482SetReadPointer = (byte) 0xE1;         
     //private static final byte OWSkipROMCmd = (byte) 0xCC;
@@ -135,13 +137,13 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     private static final byte STATUS_DIRECTION_TAKEN = (byte) 0x80; // Branch Direction taken - search direction chosen by the 3rd bit of the triplet
     
    /** Flag to indicate next search will look only for alarming devices */
-   private final boolean doAlarmSearch  = false;
+   private boolean doAlarmSearch  = false;
 
    /** Flag to indicate next search will be a 'first' */
-   private final boolean resetSearch    = true;
+   private boolean resetSearch    = true;
 
    /** Flag to indicate next search will not be preceeded by a 1-Wire reset */
-   private final boolean skipResetOnSearch    = false;
+   private boolean skipResetOnSearch    = false;
     
    /** Speed modes for 1-Wire Network, regular                    */
    public static final int SPEED_REGULAR = 0;
@@ -214,6 +216,17 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    /** Duration used in delivering power to the 1-Wire, 480 us             */
    public static final int DELIVERY_EPROM = 7;
 
+   /**
+    * Byte array of families to include in search
+    */
+   private byte[] include;
+
+   /**
+    * Byte array of families to exclude from search
+    */
+   private byte[] exclude;
+   
+   
    final int c1WS = 0x00;
    final int cSPU = 0x00;
    final int cPPM = 0x00;
@@ -273,7 +286,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    public String getAdapterVersion ()
       throws OneWireIOException, OneWireException
    {
-      return "<na>";
+      return ADAPTER_VERSION;
    }
    
    /**
@@ -556,8 +569,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
       OWReset();
       OWWriteByte((byte) 0xEC);   // Conditional search commands
 
-      //return strongAccess(address);
-      return true;
+      return strongAccess(address);
    }
 
     /**
@@ -726,7 +738,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     * @throws OneWireIOException on a 1-Wire communication error
     * @throws OneWireException on a setup error with the 1-Wire adapter
     */
-   public Enumeration getAllDeviceContainers() throws OneWireIOException, OneWireException
+   public Iterator getAllDeviceContainers() throws OneWireIOException, OneWireException
    {      
         ArrayList ibutton_list = new ArrayList();
         OneWireContainer ibutton;
@@ -748,7 +760,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
          }
          while (ibutton != null);
       }
-      return Collections.enumeration(ibutton_list);
+      Iterator it = ibutton_list.iterator();
+      return it;
    }
 
 	
@@ -973,14 +986,17 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
  
     
    /**
-    * OWSearch does a 1-wire search using the 1-wire Triplet command.
+    * OWSearch does a 1-wire search using the DS2482 1-wire Triplet command.
+    * 
+    * This code was taken from the Dallas/Maxim Application note AN3684 "How
+    * to Use the DS2482 1-wire Master" and modified for Java ME.  Also see the 
+    * PDF for the DS2482-100 and DS2482-800 devices.
     * 
     * resetSearch - Reset the search (1), or not (0)
     * lastdevice - If the last device has been found (1), or not (0)
     * deviceAddress - the returned serial number
-    *   
-    * continues from the previous search state. The search state
-    * can be reset by using the 'OWFirst' function.
+    * This function continues from the previous search state. The search 
+    * state can be reset by using the 'OWFirst' function.
     * This function contains one parameter 'alarm_only'.
     * When 'alarm_only' is TRUE (1) the find alarm command
     * 0xEC is sent instead of the normal search command 0xF0.
@@ -998,7 +1014,7 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     * on the 1-Wire Net.
     * 
     */   
-    public boolean OWSearch() {
+    public boolean OWSearch() {       
         int id_bit_number = 1;
         int last_zero = 0, rom_byte_number = 0;
         boolean search_result = false;
@@ -1326,43 +1342,6 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
         System.arraycopy(recv, 0, dataBlock, t_off, t_len - t_off);                          
     }
           
-    /**
-    *  Sends a block of data and returns the data received in the same array.
-    *  This method is used when sending a block that contains reads and writes.
-    *  The 'read' portions of the data block need to be pre-loaded with 0xFF's.
-    *  It starts sending data from the index at offset 'off' for length 'len'.
-    *
-    *  @param  dataBlock  array of data to transfer to and from the 1-Wire Network.
-    *  @param  off        offset into the array of data to start
-    *  @param  len        length of data to send / receive starting at 'off'
-    */
-    public void dataBlockORIG(byte dataBlock[], int off, int len) {
-        int t_off, t_len;
-        t_off = off;
-        t_len = len;
-        byte cmd1 = dataBlock[0];
-        byte cmd2 = dataBlock[1];
-        byte ignore = 1;
-        msg = "[I2CBridgeAdapter][dataBlockORIG] dataBlock = " + Convert.toHexString(dataBlock) + ", off = " 
-                + off + ", len = " + len;
-        //System.out.println(msg);
-        printMessage(msg, "dataBlockORIG()", INFO);
-                        
-        OWWriteByte(cmd1);
-        if ( cmd2 != (byte) 0xff ) {
-            System.out.println("[Writing " + byteToHex(cmd2) + " to 1-wire bus");
-            OWWriteByte(cmd2);
-            ignore++;
-        }       
-        
-        byte recv[] = new byte[t_len];    // allocate space for read from device 
-        int j = t_off;
-        for ( int i = 0; j < t_len - ignore; i++, j++ ) {           
-            recv[i] = OWReadByte();           
-        }          
-        System.arraycopy(recv, 0, dataBlock, ignore, t_len - ignore);       
-    }
-    
     
     //--------------------------------------------------------------------------
     // Send 8 bits of read communication to the 1-Wire Net and return the
@@ -1946,6 +1925,35 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
       return true;
     }
    
+   /**
+    * Set the 1-Wire Network search to find all iButtons and 1-Wire
+    * devices whether they are in an 'Alarm' state or not and
+    * restores the default setting of providing a 1-Wire reset
+    * command before each search. (see setNoResetSearch() method).
+    *
+    * @see #setNoResetSearch
+    */
+   public void setSearchAllDevices ()
+   {
+      doAlarmSearch     = false;
+      skipResetOnSearch = false;
+   }
+   
+    
+    /**
+    * Set the 1-Wire Network search to find only iButtons and 1-Wire
+    * devices that are in an 'Alarm' state that signals a need for
+    * attention.  Not all iButton types
+    * have this feature.  Some that do: DS1994, DS1920, DS2407.
+    * This selective searching can be canceled with the
+    * 'setSearchAllDevices()' method.
+    *
+    * @see #setNoResetSearch
+    */
+   public void setSearchOnlyAlarmingDevices ()
+   {
+      doAlarmSearch = true;
+   }
    
    /**
     * Sets the duration to supply power to the 1-Wire Network.
@@ -2082,6 +2090,125 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    {
       throw new OneWireException(
          "Program pulse delivery not supported by this adapter type");
-   }      
+   } 
+   
+   /**
+    * Removes any selectivity during a search for iButtons or 1-Wire devices
+    * by family type.  The unique address for each iButton and 1-Wire device
+    * contains a family descriptor that indicates the capabilities of the
+    * device.
+    * @see    #targetFamily
+    * @see    #targetFamily(byte[])
+    * @see    #excludeFamily
+    * @see    #excludeFamily(byte[])
+    */
+   public void targetAllFamilies ()
+   {
+      include = null;
+      exclude = null;
+   }
+   
+   /**
+    * Takes an integer to selectively search for this desired family type.
+    * If this method is used, then no devices of other families will be
+    * found by any of the search methods.
+    *
+    * @param  family   the code of the family type to target for searches
+    * @see   com.unixwizardry.onewire.utils.Address
+    * @see    #targetAllFamilies
+    */
+   public void targetFamily (int family)
+   {
+      if ((include == null) || (include.length != 1))
+         include = new byte [1];
+
+      include [0] = ( byte ) family;
+   }
+   
+   /**
+    * Takes an integer family code to avoid when searching for iButtons.
+    * or 1-Wire devices.
+    * If this method is used, then no devices of this family will be
+    * found by any of the search methods.
+    *
+    * @param  family   the code of the family type NOT to target in searches
+    * @see   com.unixwizardry.onewire.utils.Address
+    * @see    #targetAllFamilies
+    */
+   public void excludeFamily (int family)
+   {
+      if ((exclude == null) || (exclude.length != 1))
+         exclude = new byte [1];
+
+      exclude [0] = ( byte ) family;
+   }
+
+   /**
+    * Takes an array of bytes containing family codes to avoid when finding
+    * iButtons or 1-Wire devices.  If used, then no devices with family
+    * codes in this array will be found by any of the search methods.
+    *
+    * @param  family  array of family cods NOT to target for searches
+    * @see   com.unixwizardry.onewire.utils.Address
+    * @see    #targetAllFamilies
+    */
+   public void excludeFamily (byte family [])
+   {
+      if ((exclude == null) || (exclude.length != family.length))
+         exclude = new byte [family.length];
+
+      System.arraycopy(family, 0, exclude, 0, family.length);
+   }
       
+   /**
+    * Performs a 'strongAccess' with the provided 1-Wire address.
+    * 1-Wire Network has already been reset and the 'search'
+    * command sent before this is called.
+    *
+    * @param  address  device address to do strongAccess on
+    *
+    * @return  true if device participated and was present
+    *         in the strongAccess search
+    */
+   private boolean strongAccess (byte[] address)
+      throws OneWireIOException, OneWireException
+   {
+      byte[] send_packet = new byte [24];
+      int    i;
+
+      // set all bits at first
+      for (i = 0; i < 24; i++)
+         send_packet [i] = ( byte ) 0xFF;
+
+      // now set or clear apropriate bits for search
+      for (i = 0; i < 64; i++)
+         arrayWriteBit(arrayReadBit(i, address), (i + 1) * 3 - 1,
+                       send_packet);
+
+      // send to 1-Wire Net
+      dataBlock(send_packet, 0, 24);
+
+      // check the results of last 8 triplets (should be no conflicts)
+      int cnt = 56, goodbits = 0, tst, s;
+
+      for (i = 168; i < 192; i += 3)
+      {
+         tst = (arrayReadBit(i, send_packet) << 1)
+               | arrayReadBit(i + 1, send_packet);
+         s   = arrayReadBit(cnt++, address);
+
+         if (tst == 0x03)   // no device on line
+         {
+            goodbits = 0;   // number of good bits set to zero
+
+            break;          // quit
+         }
+
+         if (((s == 0x01) && (tst == 0x02)) || ((s == 0x00) && (tst == 0x01)))   // correct bit
+            goodbits++;   // count as a good bit
+      }
+
+      // check too see if there were enough good bits to be successful
+      return (goodbits >= 8);
+   }
 }
