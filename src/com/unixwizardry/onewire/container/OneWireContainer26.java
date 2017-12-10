@@ -1437,7 +1437,7 @@ public class OneWireContainer26 extends OneWireContainer
     * @return true if has high/low trip alarms
     */
    @Override
-   public boolean hasTemperatureAlarms ()
+   public boolean hasTemperatureAlarmCapability ()
    {
       return false;
    }
