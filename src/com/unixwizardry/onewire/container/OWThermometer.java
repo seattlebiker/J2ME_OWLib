@@ -81,7 +81,7 @@ public class OWThermometer implements TemperatureContainer {
     */
 
     @Override
-    public boolean hasTemperatureAlarms() {
+    public boolean hasTemperatureAlarmCapability() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
