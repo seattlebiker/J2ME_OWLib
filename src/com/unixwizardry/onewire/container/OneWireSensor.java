@@ -1,8 +1,4 @@
 
-package com.unixwizardry.onewire.container;
-
-import com.unixwizardry.onewire.OneWireException;
-import com.unixwizardry.onewire.adapter.OneWireIOException;
 
 /**
  *
@@ -57,6 +53,11 @@ import com.unixwizardry.onewire.adapter.OneWireIOException;
  * @version    0.00, 28 Aug 2000
  * @author     DS
  */
+
+package com.unixwizardry.onewire.container;
+
+import com.unixwizardry.onewire.OneWireException;
+import com.unixwizardry.onewire.adapter.OneWireIOException;
 public interface OneWireSensor
 {
 
