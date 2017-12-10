@@ -172,7 +172,7 @@ public interface TemperatureContainer extends OneWireSensor
     * @see    #getTemperatureAlarm
     * @see    #setTemperatureAlarm
     */
-   public boolean hasTemperatureAlarms ();
+   public boolean hasTemperatureAlarmCapability ();
 
    /**
     * Checks to see if this device has selectable temperature resolution.
