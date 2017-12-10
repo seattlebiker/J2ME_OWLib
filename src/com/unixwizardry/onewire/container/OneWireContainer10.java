@@ -256,7 +256,7 @@ public class OneWireContainer10 extends OneWireContainer implements TemperatureC
     * @see    #setTemperatureAlarm
     */
    @Override
-   public boolean hasTemperatureAlarms ()
+   public boolean hasTemperatureAlarmCapability ()
    {
       return true;
    }
@@ -525,8 +525,7 @@ public class OneWireContainer10 extends OneWireContainer implements TemperatureC
     * @see    #hasTemperatureAlarms
     * @see    #getTemperatureAlarm
     */
-   public void setTemperatureAlarm (int alarmType, double alarmValue,
-                                    byte[] state)
+   public void setTemperatureAlarm (int alarmType, double alarmValue, byte[] state)
    {
       if ((alarmType != ALARM_LOW) && (alarmType != ALARM_HIGH))
          throw new IllegalArgumentException("Invalid alarm type.");
@@ -535,8 +534,7 @@ public class OneWireContainer10 extends OneWireContainer implements TemperatureC
          throw new IllegalArgumentException(
             "Value for alarm not in accepted range.  Must be -55 C <-> +100 C.");
 
-      state [(alarmType == ALARM_LOW) ? 3
-                                      : 2] = ( byte ) alarmValue;
+      state [(alarmType == ALARM_LOW) ? 3 : 2] = ( byte ) alarmValue;
    }
 
    /**
