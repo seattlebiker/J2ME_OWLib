@@ -634,8 +634,7 @@ public class OneWireContainer10 extends OneWireContainer implements TemperatureC
             // now add the read bytes for data bytes and crc8
             for (int i = 1; i < 10; i++) {
                 buffer[i] = (byte) 0x0FF;
-            }
-            System.out.println("readDevice() calling readScratch()");
+            }            
             readScratch(data);
             
         } else {

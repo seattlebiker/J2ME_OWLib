@@ -793,7 +793,6 @@ class MemoryBankAD
       // see if need to access the device
       if (!readContinue)
       {
-
          // select the device
          if (!ib.adapter.OWSelect(ib.address))
          {

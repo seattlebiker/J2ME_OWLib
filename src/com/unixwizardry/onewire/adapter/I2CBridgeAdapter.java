@@ -137,11 +137,11 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     private static final byte STATUS_DIRECTION_TAKEN = (byte) 0x80; // Branch Direction taken - search direction chosen by the 3rd bit of the triplet
     
    /** Flag to indicate next search will look only for alarming devices */
-   private boolean doAlarmSearch  = false;
+   private boolean doAlarmSearch    = false;
 
    /** Flag to indicate next search will be a 'first' */
-   private boolean resetSearch    = true;
-
+   private boolean resetSearch      = true;
+   
    /** Flag to indicate next search will not be preceeded by a 1-Wire reset */
    private boolean skipResetOnSearch    = false;
     
@@ -572,6 +572,50 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
       return strongAccess(address);
    }
 
+   /**
+    * Verifies that the iButton or 1-Wire device specified is present
+    * on the 1-Wire Network and in an alarm state. This does not
+    * affect the 'current' device state information used in searches
+    * (findNextDevice...).
+    *
+    * @param  address  device address to verify is present and alarming
+    *
+    * @return  <code>true</code> if device is present and alarming, else
+    * <code>false</code>.
+    *
+    * @throws OneWireIOException on a 1-Wire communication error
+    * @throws OneWireException on a setup error with the 1-Wire adapter
+    *
+    * @see   com.dalsemi.onewire.utils.Address
+    */
+    public boolean isAlarming (long address)
+      throws OneWireIOException, OneWireException
+    {
+        return isAlarming(Address.toByteArray(address));
+    }
+   
+    /**
+    * Verifies that the iButton or 1-Wire device specified is present
+    * on the 1-Wire Network and in an alarm state. This does not
+    * affect the 'current' device state information used in searches
+    * (findNextDevice...).
+    *
+    * @param  address  device address to verify is present and alarming
+    *
+    * @return  <code>true</code> if device is present and alarming, else
+    * <code>false</code>.
+    *
+    * @throws OneWireIOException on a 1-Wire communication error
+    * @throws OneWireException on a setup error with the 1-Wire adapter
+    *
+    * @see   com.dalsemi.onewire.utils.Address
+    */
+    public boolean isAlarming (String address)
+      throws OneWireIOException, OneWireException
+    {
+        return isAlarming(Address.toByteArray(address));
+    }
+   
     /**
      * <p>Find the "first" device on the 1-wire network</p>
      * @author Bruce Juntti bjuntti at unixwizardry.com
@@ -997,8 +1041,8 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
     * deviceAddress - the returned serial number
     * This function continues from the previous search state. The search 
     * state can be reset by using the 'OWFirst' function.
-    * This function contains one parameter 'alarm_only'.
-    * When 'alarm_only' is TRUE (1) the find alarm command
+    * 
+    * When 'doAlarmSearch' is TRUE (1) the find alarm command
     * 0xEC is sent instead of the normal search command 0xF0.
     * Using the find alarm command 0xEC will limit the search to only
     * 1-Wire devices that are in an 'alarm' state.
@@ -1039,8 +1083,11 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
                 LastFamilyDiscrepancy = 0;
                 return false;
             } 
-                       
-            OWWriteByte( (byte)OWSearchCmd);            
+            
+            if (!doAlarmSearch)
+                OWWriteByte( (byte)OWSearchCmd);   
+            else
+                OWWriteByte( (byte)OWAlarmSearchCmd);
             
             // Loop to do the search
             do {
@@ -1956,6 +2003,18 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
    }
    
    /**
+    *  Set the 1-Wire Network search to not perform a 1-Wire
+    *  reset before a search.  This feature is chiefly used with
+    *  the DS2409 1-Wire coupler.
+    *  The normal reset before each search can be restored with the
+    *  'setSearchAllDevices()' method.
+    */
+   public void setNoResetSearch()
+   {
+      skipResetOnSearch = true;
+   }
+   
+   /**
     * Sets the duration to supply power to the 1-Wire Network.
     * This method takes a time parameter that indicates the program
     * pulse length when the method startPowerDelivery().<p>
@@ -2124,6 +2183,24 @@ public class I2CBridgeAdapter extends I2C_Device implements DS2482 {
 
       include [0] = ( byte ) family;
    }
+   
+   /**
+    * Takes an array of bytes to use for selectively searching for acceptable
+    * family codes.  If used, only devices with family codes in this array
+    * will be found by any of the search methods.
+    *
+    * @param  family  array of the family types to target for searches
+    * @see   com.dalsemi.onewire.utils.Address
+    * @see    #targetAllFamilies
+    */
+    public void targetFamily (byte family [])
+    {
+        if ((include == null) || (include.length != family.length))
+            include = new byte [family.length];
+
+        System.arraycopy(family, 0, include, 0, family.length);
+    }
+   
    
    /**
     * Takes an integer family code to avoid when searching for iButtons.

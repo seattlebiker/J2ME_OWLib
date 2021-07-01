@@ -35,7 +35,6 @@
 package com.unixwizardry.onewire.container;
 
 //import java.util.Vector;
-import java.util.Enumeration;
 import com.unixwizardry.onewire.*;
 import com.unixwizardry.onewire.utils.*;
 import com.unixwizardry.onewire.adapter.*;
