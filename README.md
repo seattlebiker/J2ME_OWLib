@@ -3,14 +3,14 @@
 Java ME 1-wire library
 =======================
 
-- I am submitting this OLD code with the hope that it might help others with the DS2482 1-wire master
+- I am submitting this OLD Netbeans project Java MicroEdition code with the hope that it might help others with the DS2482 1-wire master
 This is working code... well, most of it.  It did work with a few of the Dallas/Maxim devices at one time,
 but it's been so long since I've looked at it.  I mostly shelved it since apparently the entire JavaME
 team left Sun Microsystems shorlly after being acquired by Oracle, and it was basically impossible to
 get questions answered since apparently nobody uses Java MicroEdition now?
 - Caveat: I'm only submitting this repository with the hopes it might help others use the DS2482.
 - Please don't laugh at my code; in a prior life I was a UNIX Sysadmin and engineer.  Now retired, and doing
-fun stuff with embedded devices.
+fun stuff with embedded devices and mostly using VSCode with the PlatformIO extension.
 
 Adapted from Maxim's 1-wire Java library owapi_1_10
 
