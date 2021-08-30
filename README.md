@@ -1,7 +1,7 @@
 # J2ME_OWlib
 
-Java ME 1-wire library
-=======================
+Java MicroEdition Embedded 1-wire library
+=========================================
 
 - I am submitting this OLD Netbeans project Java MicroEdition code with the hope that it might help others with the DS2482 1-wire master
 This is working code... well, most of it.  It did work with a few of the Dallas/Maxim devices at one time,
